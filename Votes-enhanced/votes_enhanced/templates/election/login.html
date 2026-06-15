@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Login — VoteCollege{% endblock %}
+
+{% block content %}
+<div class="gradient-bg">
+    <div class="glass-card">
+        <div style="text-align:center;margin-bottom:30px;">
+            <div style="font-size:2.8rem;margin-bottom:8px;">🗳</div>
+            <h1 style="font-size:1.8rem;font-weight:800;margin:0;">Welcome Back</h1>
+            <p style="color:#888;margin-top:8px;font-size:0.9rem;">Sign in to your VoteCollege account</p>
+        </div>
+
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }}" style="margin-bottom:14px;">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-error" style="margin-bottom:14px;">{{ form.non_field_errors.0 }}</div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="input-label">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="Enter your username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label class="input-label">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" style="margin-top:10px;">Sign In →</button>
+        </form>
+
+        <p style="text-align:center;margin-top:24px;color:#888;font-size:0.88rem;">
+            Don't have an account?
+            <a href="{% url 'register' %}" style="color:var(--accent-color);font-weight:600;">Register here</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

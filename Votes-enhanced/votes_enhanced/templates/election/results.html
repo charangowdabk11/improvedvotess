@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Election Results — VoteCollege{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    <!-- ── Page Header ─────────────────────────────────────────────── -->
+    <div style="text-align:center;margin-bottom:40px;">
+        <h1 style="font-weight:800;font-size:2.4rem;">📊 Election Results</h1>
+        <p style="color:#888;">Live standings and vote distribution for {{ election.title }}</p>
+    </div>
+
+    <!-- ── Overall Stats Bar ───────────────────────────────────────── -->
+    <div class="stats-grid" style="margin-bottom:50px;">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value">{{ total_voters }}</div>
+            <div class="stat-label">Registered Voters</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🗳</div>
+            <div class="stat-value">{{ voters_who_voted }}</div>
+            <div class="stat-label">Voters Participated</div>
+        </div>
+        <div class="stat-card stat-card--highlight">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value">{{ overall_participation }}%</div>
+            <div class="stat-label">Overall Participation</div>
+            <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:{{ overall_participation }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Per-Position Results ────────────────────────────────────── -->
+    {% for res in results %}
+    <div class="result-card">
+
+        <!-- Position Title -->
+        <div class="result-card__header">
+            <h2 class="result-card__title">{{ res.position.name }}</h2>
+            <span class="badge badge-info">{{ res.total_votes }} vote{{ res.total_votes|pluralize }}</span>
+        </div>
+
+        {% if res.total_votes == 0 %}
+            <p style="color:#888;text-align:center;padding:30px 0;">No votes cast for this position yet.</p>
+        {% else %}
+
+        <!-- ── Two-chart layout ──────────────────────────────────── -->
+        <div class="charts-row">
+
+            <!-- Pie / Doughnut Chart -->
+            <div class="chart-wrap">
+                <h4 class="chart-label">Vote Share (Pie)</h4>
+                <canvas id="pie-{{ res.position.id }}" height="260"></canvas>
+            </div>
+
+            <!-- Bar Chart -->
+            <div class="chart-wrap">
+                <h4 class="chart-label">Vote Count (Bar)</h4>
+                <canvas id="bar-{{ res.position.id }}" height="260"></canvas>
+            </div>
+        </div>
+
+        <!-- ── Candidate Leaderboard ─────────────────────────────── -->
+        <div class="leaderboard">
+            {% for cand in res.candidates %}
+            <div class="leaderboard-row {% if forloop.first %}leaderboard-row--winner{% endif %}">
+                <div class="leaderboard-rank">
+                    {% if forloop.first %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+                </div>
+                <img src="{{ cand.photo_url }}" class="leaderboard-photo" alt="{{ cand.name }}">
+                <div class="leaderboard-info">
+                    <span class="leaderboard-name">
+                        {{ cand.name }}
+                        {% if forloop.first and res.total_votes > 0 %}<span class="winner-badge">WINNER</span>{% endif %}
+                    </span>
+                    <!-- Progress bar -->
+                    <div class="vote-bar-wrap">
+                        <div class="vote-bar" style="width:{{ cand.percentage }}%"></div>
+                    </div>
+                </div>
+                <div class="leaderboard-votes">
+                    <strong>{{ cand.vote_count }}</strong>
+                    <span class="vote-pct">{{ cand.percentage }}%</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Chart.js scripts for this position -->
+        <script>
+        (function(){
+            var COLORS = ['#667eea','#ff6b6b','#ffd32a','#05c46b','#a29bfe','#ff9f43','#48dbfb'];
+            var labels  = [{% for c in res.candidates %}"{{ c.name }}",{% endfor %}];
+            var counts  = [{% for c in res.candidates %}{{ c.vote_count }},{% endfor %}];
+            var pcts    = [{% for c in res.candidates %}{{ c.percentage }},{% endfor %}];
+            var colors  = COLORS.slice(0, labels.length);
+
+            /* ── Doughnut / Pie ── */
+            new Chart(document.getElementById('pie-{{ res.position.id }}'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: colors,
+                        borderWidth: 3,
+                        borderColor: '#1a1d2e',
+                        hoverOffset: 12,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '62%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color:'#ccc', padding:14, font:{size:12} }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx){
+                                    var idx = ctx.dataIndex;
+                                    return ' ' + ctx.label + ': ' + counts[idx] + ' votes (' + pcts[idx] + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            /* ── Bar ── */
+            new Chart(document.getElementById('bar-{{ res.position.id }}'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Votes',
+                        data: counts,
+                        backgroundColor: colors,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx){
+                                    var idx = ctx.dataIndex;
+                                    return ' ' + counts[idx] + ' votes (' + pcts[idx] + '%)';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color:'#bbb', font:{size:11} },
+                            grid:  { color:'rgba(255,255,255,0.05)' }
+                        },
+                        y: {
+                            ticks: { color:'#bbb', stepSize:1 },
+                            grid:  { color:'rgba(255,255,255,0.08)' },
+                            beginAtZero: true,
+                        }
+                    }
+                }
+            });
+        })();
+        </script>
+
+        {% endif %} {# end if total_votes > 0 #}
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <h3>No results available yet.</h3>
+        <p>Results will appear here once the election is over.</p>
+    </div>
+    {% endfor %}
+
+</div>
+{% endblock %}

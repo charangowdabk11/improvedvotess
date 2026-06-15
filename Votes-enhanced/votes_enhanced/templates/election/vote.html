@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Vote for {{ position.name }} - Online Voting{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div style="margin-bottom: 40px; text-align: center;">
+        <h1 style="font-weight: 800;">Vote for {{ position.name }}</h1>
+        <p style="color: #666;">Select one candidate and confirm your vote. <strong>This action cannot be undone.</strong></p>
+    </div>
+
+    <form method="post" id="voteForm">
+        {% csrf_token %}
+        <div class="grid">
+            {% for candidate in candidates %}
+                <label class="candidate-card" id="card-{{ candidate.id }}">
+                    <input type="radio" name="candidate" value="{{ candidate.id }}" style="display: none;" onchange="selectCandidate({{ candidate.id }})">
+                    <img src="{{ candidate.photo.url }}" alt="{{ candidate.name }}" class="candidate-photo">
+                    <h3 style="margin: 10px 0 5px 0;">{{ candidate.name }}</h3>
+                    <p style="color: var(--accent-color); font-weight: 600; margin-bottom: 15px;">{{ candidate.department }}</p>
+                    <div class="manifesto-box">
+                        <h4 style="margin: 0 0 10px 0; font-size: 0.8rem; text-transform: uppercase; color: #888;">Manifesto</h4>
+                        <p style="margin: 0;">{{ candidate.manifesto|truncatewords:30 }}</p>
+                    </div>
+                </label>
+            {% empty %}
+                <div style="grid-column: span 3; text-align: center; padding: 50px;">
+                    <h3>No candidates registered for this position.</h3>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div style="margin-top: 50px; text-align: center;">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline" style="margin-right: 20px;">Back to Dashboard</a>
+            <button type="button" onclick="confirmVote()" class="btn btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">Submit My Vote</button>
+        </div>
+    </form>
+</div>
+
+<!-- Modal for Confirmation -->
+<div id="confirmModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="glass-card" style="background: white; text-align: center; max-width: 400px;">
+        <h2 style="color: var(--accent-color);">Confirm Your Vote</h2>
+        <p>Are you sure you want to vote for <span id="selectedCandidateName" style="font-weight: 800;"></span>?</p>
+        <p style="font-size: 0.8rem; color: #ff4757;">You cannot change your vote after submission.</p>
+        <div style="margin-top: 30px; display: flex; justify-content: space-between;">
+            <button onclick="closeModal()" class="btn btn-outline">Cancel</button>
+            <button onclick="submitForm()" class="btn btn-primary">Yes, Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedId = null;
+
+    function selectCandidate(id) {
+        // Remove selection from all cards
+        document.querySelectorAll('.candidate-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        // Add to current
+        document.getElementById('card-' + id).classList.add('selected');
+        selectedId = id;
+    }
+
+    function confirmVote() {
+        if (!selectedId) {
+            alert('Please select a candidate before submitting.');
+            return;
+        }
+        const name = document.querySelector('#card-' + selectedId + ' h3').innerText;
+        document.getElementById('selectedCandidateName').innerText = name;
+        document.getElementById('confirmModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('confirmModal').style.display = 'none';
+    }
+
+    function submitForm() {
+        document.getElementById('voteForm').submit();
+    }
+</script>
+{% endblock %}

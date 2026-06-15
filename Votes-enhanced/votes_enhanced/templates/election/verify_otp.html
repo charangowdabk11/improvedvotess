@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Verify Email — VoteCollege{% endblock %}
+
+{% block content %}
+<div class="gradient-bg">
+    <div class="glass-card otp-card">
+
+        <div class="otp-icon-wrap">
+            <div class="otp-icon">📩</div>
+        </div>
+
+        <h1 class="otp-heading">Check Your Email</h1>
+        <p class="otp-sub">
+            We sent a <strong>6-digit OTP</strong> to<br>
+            <span class="otp-email">{{ email }}</span>
+        </p>
+        <p class="otp-validity">⏱ Valid for 10 minutes</p>
+
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }}" style="margin-bottom:16px;">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group" style="margin-top:10px;">
+                <label class="input-label">Enter OTP</label>
+                <input type="text"
+                       name="otp"
+                       class="form-control otp-input"
+                       placeholder="● ● ● ● ● ●"
+                       maxlength="6"
+                       inputmode="numeric"
+                       autocomplete="one-time-code"
+                       autofocus
+                       required>
+                {% if form.otp.errors %}
+                <p class="field-error">{{ form.otp.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full" style="margin-top:8px;">
+                ✔ Verify &amp; Activate Account
+            </button>
+        </form>
+
+        <div class="otp-footer">
+            <p>Didn't receive the email?</p>
+            <a href="{% url 'resend_otp' %}" class="btn btn-outline btn-sm">🔁 Resend OTP</a>
+            <a href="{% url 'register' %}" class="back-link">← Back to Register</a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

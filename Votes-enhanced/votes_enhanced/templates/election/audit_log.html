@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Audit Log — VoteCollege{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dash-header" style="margin-bottom:30px;">
+        <div>
+            <h1 class="dash-title">🔍 Audit Log</h1>
+            <p class="dash-sub">Last 500 tracked events. Read-only.</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline btn-sm">← Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Filter bar (client-side) -->
+    <div style="margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <input id="filterInput" type="text" placeholder="Search username, IP, details…"
+               class="form-control" style="max-width:300px;padding:10px 14px;">
+        <select id="filterAction" class="form-control" style="max-width:200px;padding:10px 14px;">
+            <option value="">All Actions</option>
+            <option value="LOGIN">Login</option>
+            <option value="LOGOUT">Logout</option>
+            <option value="VOTE">Vote Cast</option>
+            <option value="REGISTER">Registration</option>
+            <option value="OTP_SENT">OTP Sent</option>
+            <option value="OTP_VERIFY">OTP Verified</option>
+            <option value="OTP_FAILED">OTP Failed</option>
+            <option value="ACCESS_DENY">Access Denied</option>
+        </select>
+        <span id="rowCount" style="color:#888;font-size:0.88rem;"></span>
+    </div>
+
+    <div class="audit-table-wrap">
+        <table class="audit-table" id="auditTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Student</th>
+                    <th>IP Address</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr class="audit-row" data-action="{{ log.action }}">
+                    <td style="color:#555;">{{ forloop.counter }}</td>
+                    <td class="audit-ts">{{ log.timestamp|date:"d M Y, H:i:s" }}</td>
+                    <td>
+                        <span class="audit-action audit-action--{{ log.action|lower }}">
+                            {{ log.get_action_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if log.student %}
+                            <strong>{{ log.student.username }}</strong>
+                            <br><small style="color:#888;">{{ log.student.student_id }}</small>
+                        {% else %}
+                            <span style="color:#555;">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="audit-ip">{{ log.ip_address|default:"—" }}</td>
+                    <td class="audit-details">{{ log.details|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;padding:60px;color:#666;">No audit events recorded yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+    var rows    = Array.from(document.querySelectorAll('.audit-row'));
+    var counter = document.getElementById('rowCount');
+
+    function updateCount(){
+        var visible = rows.filter(r => r.style.display !== 'none').length;
+        counter.textContent = visible + ' of ' + rows.length + ' events';
+    }
+
+    function applyFilters(){
+        var text   = document.getElementById('filterInput').value.toLowerCase();
+        var action = document.getElementById('filterAction').value;
+        rows.forEach(function(row){
+            var matchText   = !text   || row.textContent.toLowerCase().includes(text);
+            var matchAction = !action || row.dataset.action === action;
+            row.style.display = (matchText && matchAction) ? '' : 'none';
+        });
+        updateCount();
+    }
+
+    document.getElementById('filterInput').addEventListener('input', applyFilters);
+    document.getElementById('filterAction').addEventListener('change', applyFilters);
+    updateCount();
+})();
+</script>
+{% endblock %}

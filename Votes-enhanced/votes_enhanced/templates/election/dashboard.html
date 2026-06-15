@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Dashboard — VoteCollege{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    <!-- ── Header ──────────────────────────────────────────────────── -->
+    <div class="dash-header">
+        <div>
+            <h1 class="dash-title">Student Dashboard</h1>
+            <p class="dash-sub">Welcome back, <strong>{{ user.username }}</strong>. Cast your votes below.</p>
+        </div>
+        <div class="dash-badges">
+            {% if is_verified %}
+                <span class="badge badge-success">✔ Verified Voter</span>
+            {% else %}
+                <span class="badge badge-warn">⚠ Verification Pending</span>
+            {% endif %}
+
+            {% if election %}
+                {% with label=election.get_status_label %}
+                    {% if label == "open" %}
+                        <span class="badge badge-success">🟢 {{ election.title }} — Open</span>
+                    {% elif label == "upcoming" %}
+                        <span class="badge badge-info">⏳ {{ election.title }} — Upcoming</span>
+                    {% elif label == "ended" %}
+                        <span class="badge badge-danger">⬛ {{ election.title }} — Ended</span>
+                    {% else %}
+                        <span class="badge badge-danger">🔴 {{ election.title }} — Closed</span>
+                    {% endif %}
+                {% endwith %}
+
+                {% if election.start_time and election.end_time %}
+                <span class="badge badge-muted" style="font-size:0.72rem;">
+                    📅 {{ election.start_time|date:"d M, H:i" }} → {{ election.end_time|date:"d M, H:i" }}
+                </span>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ── Stats Row ───────────────────────────────────────────────── -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value">{{ total_voters }}</div>
+            <div class="stat-label">Total Voters</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🗳</div>
+            <div class="stat-value">{{ voters_who_voted }}</div>
+            <div class="stat-label">Votes Cast</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🧑‍💼</div>
+            <div class="stat-value">{{ total_candidates }}</div>
+            <div class="stat-label">Candidates</div>
+        </div>
+        <div class="stat-card stat-card--highlight">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value">{{ participation }}%</div>
+            <div class="stat-label">Participation</div>
+            <div class="stat-bar-wrap">
+                <div class="stat-bar" style="width:{{ participation }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Positions Grid ──────────────────────────────────────────── -->
+    <h2 class="section-heading">Open Positions</h2>
+    <div class="grid">
+        {% for position in positions %}
+        <div class="position-card">
+            <h3 class="position-title">{{ position.name }}</h3>
+            <p class="position-sub">Select the best candidate for this role.</p>
+
+            <!-- per-position votes mini-stat -->
+            {% for ps in position_stats %}
+                {% if ps.position.id == position.id %}
+                <p class="position-votes-count">{{ ps.votes }} vote{{ ps.votes|pluralize }} cast</p>
+                {% endif %}
+            {% endfor %}
+
+            <hr class="divider">
+
+            <div class="position-actions">
+                {% if position.id in voted_positions %}
+                    <span class="voted-check">✔ Voted</span>
+                    <a href="{% url 'results' %}" class="btn btn-outline btn-sm">View Standings</a>
+                {% else %}
+                    {% if is_open %}
+                        <a href="{% url 'vote' position.id %}" class="btn btn-primary">Cast Your Vote →</a>
+                    {% else %}
+                        <span class="election-closed-msg">Election Closed</span>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-icon">🗳</div>
+            <h3>No active positions yet.</h3>
+            <p>Check back once the administration sets up the election.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
