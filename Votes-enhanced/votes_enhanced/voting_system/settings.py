@@ -79,6 +79,13 @@ DEFAULT_AUTO_FIELD     = 'django.db.models.BigAutoField'
 # Development: prints emails to the terminal console (no SMTP needed)
 EMAIL_BACKEND    = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'VoteCollege <noreply@votecollege.edu>'
+STATIC_URL = 'static/'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 # Production: switch to SMTP backend and fill in your credentials
 # EMAIL_BACKEND    = 'django.core.mail.backends.smtp.EmailBackend'
